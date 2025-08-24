@@ -11,7 +11,7 @@ class Message(models.Model):
         return f"From {self.sender} to {self.recipient} at {self.timestamp}"
 
     class Meta:
-        ordering = ['-created']
+        ordering = ['created']
 
 
 class ThreadManager(models.Manager):
@@ -31,8 +31,12 @@ class ThreadManager(models.Manager):
 class Thread(models.Model):
     users = models.ManyToManyField(User, related_name='threads')
     messages = models.ManyToManyField(Message)
+    updated = models.DateTimeField(auto_now=True)
     
     objects = ThreadManager()
+
+    class Meta:
+        ordering = ['-updated']
 
 def messages_changed(sender, **kwargs):
     instance = kwargs.pop("instance", None)
@@ -50,5 +54,8 @@ def messages_changed(sender, **kwargs):
     
     # Buscar los mensajes de false_pk_set qeu sí están en pk_set y se borran de pk_set
     pk_set.difference_update(false_pk_set)
+
+    # Forzar actualización
+    instance.save()
 
 m2m_changed.connect(messages_changed, sender=Thread.messages.through)
